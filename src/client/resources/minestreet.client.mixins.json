@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "com.buvtack.minestreet.client.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"ScreenAccessor"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

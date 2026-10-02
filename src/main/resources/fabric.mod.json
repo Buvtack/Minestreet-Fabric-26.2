@@ -1,0 +1,37 @@
+{
+	"schemaVersion": 1,
+	"id": "minestreet",
+	"version": "${version}",
+	"name": "Wolf Of Minestreet",
+	"description": "Adds the stock market to Minecraft to allow automatic resource production in a creative, unique and passive way.",
+	"authors": [
+		"Buvtack"
+	],
+	"contact": {
+		"homepage": "https://modrinth.com/project/wolfofminestreet"
+	},
+	"license": "ARR",
+	"icon": "assets/minestreet/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.buvtack.minestreet.WolfOfMinestreet"
+		],
+		"client": [
+			"com.buvtack.minestreet.client.WolfOfMinestreetClient"
+		]
+	},
+	"mixins": [
+		"minestreet.mixins.json",
+		{
+			"config": "minestreet.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
