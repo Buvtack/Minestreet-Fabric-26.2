@@ -42,8 +42,15 @@ public class ModHelper {
         return GLFW.glfwGetMouseButton(windowHandle, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
     }
 
+    public static Player player() {
+        return Minecraft.getInstance().player;
+    }
+
     public static Screen screen() {
         return Minecraft.getInstance().gui.screen();
+    }
+    public static TradingStationScreen tradingScreen() {
+        return (TradingStationScreen) screen();
     }
 
     public static boolean isTradingStation() {

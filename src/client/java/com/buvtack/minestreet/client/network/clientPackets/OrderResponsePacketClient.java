@@ -1,7 +1,9 @@
 package com.buvtack.minestreet.client.network.clientPackets;
 
+import com.buvtack.minestreet.client.ClientTickTasks;
 import com.buvtack.minestreet.client.ModHelper;
 import com.buvtack.minestreet.client.Positions;
+import com.buvtack.minestreet.client.RenderTasks;
 import com.buvtack.minestreet.client.gui.screens.TradingStationScreen;
 import com.buvtack.minestreet.common.Position;
 import com.buvtack.minestreet.network.packets.OrderResponsePacket;
@@ -14,13 +16,17 @@ public class OrderResponsePacketClient {
 
     public static void handle(OrderResponsePacket packet, ClientPlayNetworking.Context context) {
         if (packet.success()) {
-            Minecraft.getInstance().execute(() -> {
+            context.client().execute(() -> {
                 JsonObject object = JsonParser.parseString(packet.position()).getAsJsonObject();
                 Position position = Position.fromJsonObject(object);
-                Positions.positions.put(position.clientId(), position);
+                if (position.worth() >= 1.0D)
+                    Positions.positions.put(position.clientId(), position);
+                else
+                    Positions.positions.remove(position.clientId());
+
                 if (ModHelper.screen() instanceof TradingStationScreen screen) {
                     screen.updatePositionEntryList();
-                    screen.updateInventory();
+                    screen.refreshInventory();
                 }
             });
         }

@@ -131,6 +131,7 @@ public class Position {
             if (is(object))
                 positions.remove(i);
         }
+        StockMarket.savePositionFile(positionFile, root);
 
         return this;
     }

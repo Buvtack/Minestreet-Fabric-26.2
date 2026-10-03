@@ -3,6 +3,7 @@ package com.buvtack.minestreet.client.gui.components;
 import com.buvtack.minestreet.CommonModHelper;
 import com.buvtack.minestreet.client.ModHelper;
 import com.buvtack.minestreet.client.gui.ColorHelper;
+import com.buvtack.minestreet.client.gui.ModColor;
 import com.buvtack.minestreet.client.gui.ModColors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -15,7 +16,7 @@ public class ModButton extends DimensionalModComponent {
     private Runnable onClick;
 
     private ModLabel text;
-    private int backgroundColor;
+    private ModColor backgroundColor;
     private int textColor;
     private TradingPanel panel;
     private ModTooltip tooltip = null;
@@ -27,7 +28,7 @@ public class ModButton extends DimensionalModComponent {
         this.onClick = onClick;
     }
 
-    public ModButton(int x, int y, int width, Runnable onClick, ModLabel text, int backgroundColor, int textColor) {
+    public ModButton(int x, int y, int width, Runnable onClick, ModLabel text, ModColor backgroundColor, int textColor) {
         this(x, y, width, onClick);
         this.text = text;
         this.backgroundColor = backgroundColor;
@@ -50,7 +51,7 @@ public class ModButton extends DimensionalModComponent {
         return this;
     }
 
-    public ModButton color(int color) {
+    public ModButton color(ModColor color) {
         backgroundColor = color;
         return this;
     }
@@ -101,13 +102,12 @@ public class ModButton extends DimensionalModComponent {
         graphics.blit(buttonTexture, x, y, x + halfWidth + remainder, y + height, 0.0f, (float) (halfWidth + remainder) / 200.0f, 0.0f, 1.0f);
         graphics.blit(buttonTexture, x + halfWidth + remainder, y, x + width, y + height, 1.0f - ((float) halfWidth / 200.0f), 1.0f, 0.0f, 1.0f);
 
-        //if (isMouseOver())
         boolean selected = panel.getSelectedButton() == this || panel.getSelectedInput() == this;
-        int color = ColorHelper.lerpColor(fade(), backgroundColor, backgroundColor + ModColors.EXTRA_ALPHA.color);
-        color = selected ? backgroundColor + ModColors.EXTRA_ALPHA.color + 0x11000000 : color;
-        graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, color);
+        ModColor color = backgroundColor.alphaify(fade() / 3F);
+        color = selected ? color.alphaify(0.4F) : color;
+        graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, color.color);
         if (selected)
-            graphics.outline(x, y, width, height, backgroundColor + ModColors.EXTRA_ALPHA.color);
+            graphics.outline(x, y, width, height, backgroundColor.alphaify(0.1F).color);
 
         text.render(graphics, mouseX, mouseY, partialTick);
 

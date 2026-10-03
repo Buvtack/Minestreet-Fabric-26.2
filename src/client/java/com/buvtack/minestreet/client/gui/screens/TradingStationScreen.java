@@ -1,12 +1,11 @@
 package com.buvtack.minestreet.client.gui.screens;
 
+import com.buvtack.minestreet.client.*;
 import com.buvtack.minestreet.gui.TradingStationMenu;
 import com.google.gson.JsonObject;
 import com.buvtack.minestreet.CommonModHelper;
 import com.buvtack.minestreet.StockMarket;
 import com.buvtack.minestreet.WolfOfMinestreet;
-import com.buvtack.minestreet.client.Positions;
-import com.buvtack.minestreet.client.StockMarketClient;
 import com.buvtack.minestreet.client.gui.components.*;
 import com.buvtack.minestreet.common.Order;
 import com.buvtack.minestreet.common.Position;
@@ -35,6 +34,8 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
             Identifier.fromNamespaceAndPath(WolfOfMinestreet.MODID, "textures/gui/container/trading_station.png");
 
     private Inventory inventory;
+    private byte inventoryRefreshTicks = 2;
+    private byte inventoryRefreshTicksRemaining = 2;
 
     private ModSlot[][] inventorySlots;
     private ModSlot[] hotbarSlots;
@@ -79,6 +80,7 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
     }
 
     private void initInventory() {
+        inventory = ModHelper.player().getInventory();
         final int startX = width / 2 - 79;
         final int startY = height / 2 + 52;
 
@@ -107,7 +109,12 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
         }
     }
 
+    public void refreshInventory() {
+        inventoryRefreshTicksRemaining = inventoryRefreshTicks;
+    }
+
     public void updateInventory() {
+        WolfOfMinestreet.LOGGER.info("UPDATING INVENTORY");
         inventory = Minecraft.getInstance().player.getInventory();
         initInventory();
     }
@@ -136,6 +143,16 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
 
     @Override
     public void containerTick() {
+        for (var entry : tickTasks.entrySet()) {
+            Runnable task = entry.getValue();
+            task.run();
+        }
+
+        if (inventoryRefreshTicksRemaining > 0) {
+            updateInventory();
+            inventoryRefreshTicksRemaining--;
+        }
+
         for (int i = 0; i < stocks.size(); i++) {
             StockEntry entry = stocks.get(i);
             entry.tick();
@@ -191,13 +208,30 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
     }
 
     public void updatePositionEntryList() {
-        initPositions();
+        String selectedId = selectedPosition != null ? selectedPosition.getPosition().clientId() : null;
+
+        positions.clear();
+        int y = 30;
+        int x = width - PositionEntry.WIDTH - 5;
+        for (String id : Positions.positions.keySet()) {
+            Position position = Positions.positions.get(id);
+            PositionEntry entry = new PositionEntry(x, y, position);
+            if (position.clientId().equals(selectedId) && selectedStock == null)
+                selectedPosition = entry;
+
+            positions.add(new PositionEntry(x, y, position));
+            y += 2 + PositionEntry.HEIGHT;
+        }
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         this.graphics = graphics;
+
+        for (var entry : renderTasks.entrySet()) {
+            entry.getValue().run();
+        }
 
         int x = width / 2 - 192;
         int y = height / 2 - 144;
@@ -210,6 +244,7 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
         renderStocks(mouseX, mouseY, partialTick);
         renderPositions(mouseX, mouseY, partialTick);
         panel.render(graphics, mouseX, mouseY, partialTick);
+        renderTasks.remove(RenderTasks.UPDATE_INVENTORY);
     }
 
     private void renderSlots(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -361,15 +396,33 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
         if (panel.getSelectedButton() == null)
             return;
 
+        Order.Type type = panel.orderType();
+        if (type == Order.Type.SELL && selectedPosition == null)
+            return;
+
+        if (selectedStack == null || selectedStack.isEmpty())
+            return;
+
         String ticker = selectedEntry.getTicker();
         Identifier item = BuiltInRegistries.ITEM.getKey(selectedStack.getItem());
         double amount = panel.getAmount();
         double price = Double.parseDouble(StockMarket.getPrice(ticker));
         UUID ownerUUID = Minecraft.getInstance().player.getUUID();
-        Order.Type type = panel.orderType();
+
         Order order = new Order(ticker, item, amount, price, ownerUUID, type);
         WolfOfMinestreet.LOGGER.info("Sent order to the server");
-        //ClientPacketDistributor.sendToServer(new SendOrderPacket(order.toJsonString()));
+        ClientPlayNetworking.send(new SendOrderPacket(order.toJsonString()));
+    }
+
+    public void closePosition() {
+        Order order = new Order(
+                selectedPosition.getTicker(),
+                BuiltInRegistries.ITEM.getKey(selectedStack.getItem()),
+                selectedPosition.getPosition().worth(),
+                Double.parseDouble(StockMarket.getPrice(selectedPosition.getTicker())),
+                ModHelper.player().getUUID(),
+                Order.Type.SELL
+        );
         ClientPlayNetworking.send(new SendOrderPacket(order.toJsonString()));
     }
 

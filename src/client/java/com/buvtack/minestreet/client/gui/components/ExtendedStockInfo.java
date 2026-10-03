@@ -15,18 +15,25 @@ public class ExtendedStockInfo extends ModComponent {
     private ModLabel price;
     private ModLabel change;
     private ModLabel changePercentage;
+    private ModLabel divYield;
     private PastReturns pastReturns;
 
     private JsonObject stock;
 
     public ExtendedStockInfo(int x, int y) {
-        super(x, y);
-        stock = null;
+        this(x, y, (JsonObject) null);
     }
 
     public ExtendedStockInfo(int x, int y, JsonObject stock) {
         super(x, y);
         setStock(stock);
+
+        int gap = 2;
+        volume = new ModLabel(x, y, Component.translatable(TranslationKeys.VOLUME), ModColors.WHITE, ModLabel.Alignment.LEFT);
+        price = new ModLabel(x, volume.y + font.lineHeight + gap, Component.translatable(TranslationKeys.PRICE), ModColors.WHITE, ModLabel.Alignment.LEFT);
+        change = new ModLabel(x, price.y + font.lineHeight + gap, Component.translatable(TranslationKeys.CHANGE), ModColors.WHITE, ModLabel.Alignment.LEFT);
+        changePercentage = new ModLabel(x, change.y + font.lineHeight + gap, Component.translatable(TranslationKeys.CHANGE_PERCENTAGE), ModColors.WHITE, ModLabel.Alignment.LEFT);
+        divYield = new ModLabel(x, changePercentage.y + font.lineHeight + gap, Component.translatable(TranslationKeys.DIVIDEND_YIELD), ModColors.WHITE, ModLabel.Alignment.LEFT);
     }
 
     public ExtendedStockInfo(int x, int y, Position position) {
@@ -34,12 +41,27 @@ public class ExtendedStockInfo extends ModComponent {
     }
 
     public void setStock(JsonObject stock) {
+        if (stock == null)
+            return;
+
         this.stock = stock;
-        int gap = 2;
-        volume = new ModLabel(x, y, Component.translatable(TranslationKeys.VOLUME), ModColors.WHITE, ModLabel.Alignment.LEFT);
-        price = new ModLabel(x, volume.y + font.lineHeight + gap, Component.translatable(TranslationKeys.PRICE), ModColors.WHITE, ModLabel.Alignment.LEFT);
-        change = new ModLabel(x, price.y + font.lineHeight + gap, Component.translatable(TranslationKeys.CHANGE), ModColors.WHITE, ModLabel.Alignment.LEFT);
-        changePercentage = new ModLabel(x, change.y + font.lineHeight + gap, Component.translatable(TranslationKeys.CHANGE_PERCENTAGE), ModColors.WHITE, ModLabel.Alignment.LEFT);
+
+        String ticker = stock.get(StockMarketKeys.TICKER).getAsString();
+        long volumeValue = stock.get(StockMarketKeys.VOLUME).getAsLong();
+        double priceValue = stock.get(StockMarketKeys.PRICE).getAsDouble();
+        double changeValue = Double.parseDouble(StockMarket.getChange(ticker));
+        double changePercentageValue = Double.parseDouble(StockMarket.getChangePercentage(ticker));
+        double divYieldValue = stock.get(StockMarketKeys.DIVIDEND_YIELD).getAsDouble();
+        Component volumeContent = Component.translatable(TranslationKeys.VOLUME).append(ModHelper.format(volumeValue));
+        Component priceContent = Component.translatable(TranslationKeys.PRICE).append(ModHelper.format(priceValue));
+        Component changeContent = Component.translatable(TranslationKeys.CHANGE).append(ModHelper.format(changeValue)).withColor(ModHelper.getColor(changeValue).color);
+        Component changePercentageContent = Component.translatable(TranslationKeys.CHANGE_PERCENTAGE).append(ModHelper.format(changePercentageValue)).append("%").withColor(ModHelper.getColor(changePercentageValue).color);
+        Component divYieldContent = Component.translatable(TranslationKeys.DIVIDEND_YIELD).append(ModHelper.format(divYieldValue)).append("%");
+        volume.setContent(volumeContent);
+        price.setContent(priceContent);
+        change.setContent(changeContent);
+        changePercentage.setContent(changePercentageContent);
+        divYield.setContent(divYieldContent);
     }
 
     public void setStock(Position position) {
@@ -55,20 +77,7 @@ public class ExtendedStockInfo extends ModComponent {
         price.tick();
         change.tick();
         changePercentage.tick();
-
-        String ticker = stock.get(StockMarketKeys.TICKER).getAsString();
-        int volumeValue = stock.get(StockMarketKeys.VOLUME).getAsInt();
-        double priceValue = stock.get(StockMarketKeys.PRICE).getAsDouble();
-        double changeValue = Double.parseDouble(StockMarket.getChange(ticker));
-        double changePercentageValue = Double.parseDouble(StockMarket.getChangePercentage(ticker));
-        Component volumeContent = Component.translatable(TranslationKeys.VOLUME).append(ModHelper.format(volumeValue));
-        Component priceContent = Component.translatable(TranslationKeys.PRICE).append(ModHelper.format(priceValue));
-        Component changeContent = Component.translatable(TranslationKeys.CHANGE).append(ModHelper.format(changeValue)).withColor(ModHelper.getColor(changeValue).color);
-        Component changePercentageContent = Component.translatable(TranslationKeys.CHANGE_PERCENTAGE).append(ModHelper.format(changePercentageValue)).append("%").withColor(ModHelper.getColor(changePercentageValue).color);
-        volume.setContent(volumeContent);
-        price.setContent(priceContent);
-        change.setContent(changeContent);
-        changePercentage.setContent(changePercentageContent);
+        divYield.tick();
     }
 
     @Override
@@ -80,6 +89,7 @@ public class ExtendedStockInfo extends ModComponent {
         price.render(graphics, mouseX, mouseY, partialTick);
         change.render(graphics, mouseX, mouseY, partialTick);
         changePercentage.render(graphics, mouseX, mouseY, partialTick);
+        divYield.render(graphics, mouseX, mouseY, partialTick);
     }
 
     public JsonObject getStock() {

@@ -34,6 +34,8 @@ public class TradingPanel extends ModComponent {
     private ModButton byPercentage;
     private ModButton selectedInput;
 
+    private ModButton closePosition;
+
     private ExtendedStockInfo stockInfo;
     private ExtendedPositionInfo positionInfo;
 
@@ -50,13 +52,13 @@ public class TradingPanel extends ModComponent {
 
         buy = ModButton.builder(x + WIDTH / 2 - 45, y + 20, 40, Component.translatable(TranslationKeys.TRADING_PANEL_BUY), ModLabel.Alignment.CENTER)
                 .onClick(() -> {selectedButton = buy;})
-                .color(0x5510FF10)
+                .color(ModColors.BUY)
                 .panel(this)
                 .build();
 
         sell = ModButton.builder(x + WIDTH / 2 + 5, y + 20, 40, Component.translatable(TranslationKeys.TRADING_PANEL_SELL), ModLabel.Alignment.CENTER)
                 .onClick(() -> {selectedButton = sell;})
-                .color(0x55FF1010)
+                .color(ModColors.SELL)
                 .panel(this)
                 .build();
 
@@ -66,17 +68,23 @@ public class TradingPanel extends ModComponent {
 
         byQuantity = ModButton.builder(orderInput.getX() + orderInput.getWidth(), orderInput.getY(), 20, Component.literal("ABS"), ModLabel.Alignment.CENTER)
                 .onClick(() -> selectedInput = byQuantity)
-                .color(0x55005EF5)
+                .color(ModColors.NEUTRAL)
                 .panel(this)
                 .build();
         byQuantity.tooltip(new ModTooltip(byQuantity.x, byQuantity.y, 30, ModColors.STOCK_LIST_COLOR, Component.literal("Select this to enter the exact amount of the selected item you'd like to buy/sell.")));
 
         byPercentage = ModButton.builder(byQuantity.x + byQuantity.width, byQuantity.y, 20, Component.literal("%"), ModLabel.Alignment.CENTER)
                 .onClick(() -> selectedInput = byPercentage)
-                .color(0x55005EF5)
+                .color(ModColors.NEUTRAL)
                 .panel(this)
                 .build();
         byPercentage.tooltip(new ModTooltip(byPercentage.x, byPercentage.y, 30, ModColors.STOCK_LIST_COLOR, Component.literal("Select this to enter the percentage you want to buy/sell of the selected item. (e.g. if you have 100 diamonds and you type 50, you will buy/sell 50 diamonds)")));
+
+        closePosition = ModButton.builder(byPercentage.x + byPercentage.width, byPercentage.y, 82, Component.translatable(TranslationKeys.TRADING_PANEL_CLOSE_POSITION), ModLabel.Alignment.CENTER)
+                .onClick(ModHelper.tradingScreen()::closePosition)
+                .color(ModColors.SELL)
+                .panel(this)
+                .build();
 
         Component sendText = Component.literal("Send Order");
         int sendWidth = font.width(sendText.getString()) + 10;
@@ -85,7 +93,7 @@ public class TradingPanel extends ModComponent {
                     TradingStationScreen screen = (TradingStationScreen) ModHelper.screen();
                     screen.send();
                 })
-                .color(0x77005EF5)
+                .color(ModColors.NEUTRAL.alphaify(0.15F))
                 .panel(this)
                 .build();
 
@@ -104,6 +112,9 @@ public class TradingPanel extends ModComponent {
         tickSelectedStackLabel();
         stockInfo.tick();
         positionInfo.tick();
+
+        if (position != null)
+            closePosition.tick();
     }
 
     private void tickSelectedStackLabel() {
@@ -134,6 +145,10 @@ public class TradingPanel extends ModComponent {
         renderSelectedStackCount();
         stockInfo.render(graphics, mouseX, mouseY, partialTick);
         positionInfo.render(graphics, mouseX, mouseY, partialTick);
+
+        if (position != null)
+            closePosition.render(graphics, mouseX, mouseY, partialTick);
+
         byQuantity.render(graphics, mouseX, mouseY, partialTick);
         byPercentage.render(graphics, mouseX, mouseY, partialTick);
     }
@@ -187,7 +202,20 @@ public class TradingPanel extends ModComponent {
 
     public double getAmount() {
         try {
-            return Double.parseDouble(orderInput.getValue());
+            if (selectedInput == byQuantity)
+                return Double.parseDouble(orderInput.getValue());
+            else {
+                double fraction = Double.parseDouble(orderInput.getValue()) / 100;
+                TradingStationScreen screen = (TradingStationScreen) ModHelper.screen();
+                if (selectedButton == buy)
+                    return ModHelper.getItemCount(screen.getSelectedStack()) * fraction;
+                else {
+                    if (position == null)
+                        return 0;
+
+                    return position.worth() * fraction;
+                }
+            }
         } catch (Exception e) {
             return 0.0D;
         }
