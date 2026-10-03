@@ -1,5 +1,6 @@
 package com.buvtack.minestreet.client.gui.components;
 
+import com.buvtack.minestreet.StockMarket;
 import com.google.gson.JsonObject;
 import com.buvtack.minestreet.StockMarketKeys;
 import com.buvtack.minestreet.client.ModHelper;
@@ -40,9 +41,6 @@ public class TradingPanel extends ModComponent {
     private ExtendedPositionInfo positionInfo;
 
     private ModButton send;
-
-    private JsonObject stock;
-    private Position position;
 
     public TradingPanel(int x, int y) {
         super(x, y);
@@ -102,7 +100,7 @@ public class TradingPanel extends ModComponent {
     }
 
     @Override
-    public void tick() {
+    public void doTick() {
         buy.tick();
         sell.tick();
         byQuantity.tick();
@@ -113,7 +111,7 @@ public class TradingPanel extends ModComponent {
         stockInfo.tick();
         positionInfo.tick();
 
-        if (position != null)
+        if (ModHelper.tradingScreen().getSelectedPosition() != null)
             closePosition.tick();
     }
 
@@ -128,7 +126,7 @@ public class TradingPanel extends ModComponent {
 
     @Override
     public void doRender() {
-        if (stock == null)
+        if (ModHelper.tradingScreen().getSelectedEntry() == null)
             return;
 
         graphics.fill(x, y, x + WIDTH, y + HEIGHT, ModColors.STOCK_LIST_COLOR.color);
@@ -146,7 +144,7 @@ public class TradingPanel extends ModComponent {
         stockInfo.render(graphics, mouseX, mouseY, partialTick);
         positionInfo.render(graphics, mouseX, mouseY, partialTick);
 
-        if (position != null)
+        if (ModHelper.tradingScreen().getSelectedPosition() != null)
             closePosition.render(graphics, mouseX, mouseY, partialTick);
 
         byQuantity.render(graphics, mouseX, mouseY, partialTick);
@@ -161,35 +159,27 @@ public class TradingPanel extends ModComponent {
         }
     }
 
-    public void setStock(JsonObject stock) {
-        this.stock = stock;
-        title.setContent(Component.literal(stock.get(StockMarketKeys.NAME).getAsString()));
-        stockInfo.setStock(stock);
-        reset();
-        positionInfo.setPosition(null);
-    }
-
-    public void setPosition(Position position) {
-        JsonObject stock = StockMarketClient.get(position.getTicker());
-        setStock(stock);
-        positionInfo.setPosition(position);
-        this.position = position;
-    }
-
     private void reset() {
         selectedButton = null;
     }
 
     public void refresh() {
+        PositionEntry positionEntry = ModHelper.tradingScreen().getSelectedPosition();
+        JsonObject stock = null;
+        if (positionEntry != null) {
+            Position position = ModHelper.tradingScreen().getSelectedPosition().getPosition();
+            positionInfo.setPosition(position);
+            stock = StockMarket.get(position.getTicker());
+        } else if (ModHelper.tradingScreen().getSelectedStock() != null) {
+            positionInfo.setPosition(null);
+            stock = ModHelper.tradingScreen().getSelectedStock().stock;
+        }
 
-    }
-
-    public JsonObject getStock() {
-        return stock;
-    }
-
-    public Position getPosition() {
-        return position;
+        if (stock != null) {
+            title.setContent(Component.literal(stock.get(StockMarketKeys.NAME).getAsString()));
+            stockInfo.setStock(stock);
+            reset();
+        }
     }
 
     public ModButton getSelectedButton() {
@@ -210,6 +200,7 @@ public class TradingPanel extends ModComponent {
                 if (selectedButton == buy)
                     return ModHelper.getItemCount(screen.getSelectedStack()) * fraction;
                 else {
+                    Position position = ModHelper.tradingScreen().getSelectedPosition().getPosition();
                     if (position == null)
                         return 0;
 

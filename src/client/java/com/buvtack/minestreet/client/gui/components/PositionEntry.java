@@ -31,7 +31,7 @@ public class PositionEntry extends ModEntry {
     }
 
     @Override
-    public void tick() {
+    public void doTick() {
         if (ModHelper.isNotLeftClicking())
             clickable = true;
 

@@ -44,7 +44,7 @@ public class ModTooltip extends ModComponent implements Collection<ModLabel> {
     }
 
     @Override
-    public void tick() {
+    public void doTick() {
         if (changed) {
             lastY = y - MARGIN;
             for (ModLabel label : this) {

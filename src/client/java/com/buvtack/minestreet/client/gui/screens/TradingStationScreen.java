@@ -49,7 +49,8 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
     private boolean shouldSendRequest = false;
     private String lastSearched;
 
-    private TradingPanel panel;
+    //private TradingPanel panel;
+    private InnerTradingScreen innerScreen;
 
     private List<StockEntry> stocks;
     private List<PositionEntry> positions;
@@ -67,20 +68,20 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
     @Override
     public void init() {
         super.init();
-        panel = new TradingPanel(width / 2 - TradingPanel.WIDTH / 2 + 1, height / 2 - TradingPanel.HEIGHT / 2 - 39);
+        //panel = new TradingPanel(width / 2 - TradingPanel.WIDTH / 2 + 1, height / 2 - TradingPanel.HEIGHT / 2 - 39);
+        innerScreen = new InnerTradingScreen(width / 2 - InnerTradingScreen.WIDTH / 2 + 1, height / 2 - InnerTradingScreen.HEIGHT / 2 - 39);
         searchStock.init();
         addRenderableWidget(searchStock);
 
         initInventory();
 
         //CompletableFuture.runAsync(this::fetchInitialStocks).thenAcceptAsync(action -> {
-            initStocks();
-            initPositions();
+        initStocks();
+        initPositions();
         //});
     }
 
     private void initInventory() {
-        inventory = ModHelper.player().getInventory();
         final int startX = width / 2 - 79;
         final int startY = height / 2 + 52;
 
@@ -114,7 +115,6 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
     }
 
     public void updateInventory() {
-        WolfOfMinestreet.LOGGER.info("UPDATING INVENTORY");
         inventory = Minecraft.getInstance().player.getInventory();
         initInventory();
     }
@@ -143,9 +143,9 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
 
     @Override
     public void containerTick() {
-        for (var entry : tickTasks.entrySet()) {
-            Runnable task = entry.getValue();
-            task.run();
+        for (int i = 0; i < stocks.size(); i++) {
+            StockEntry entry = stocks.get(i);
+            entry.tick();
         }
 
         if (inventoryRefreshTicksRemaining > 0) {
@@ -153,31 +153,18 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
             inventoryRefreshTicksRemaining--;
         }
 
-        for (int i = 0; i < stocks.size(); i++) {
-            StockEntry entry = stocks.get(i);
-            entry.tick();
-        }
-
         for (PositionEntry entry : positions)
             entry.tick();
 
-        if (selectedEntry != null && selectedEntry instanceof StockEntry && panel.getStock() != selectedStock.stock)
-            panel.setStock(selectedStock.stock);
-        else if (selectedEntry != null && selectedEntry instanceof PositionEntry && panel.getPosition() != selectedPosition.getPosition()) {
-            panel.setPosition(selectedPosition.getPosition());
-            selectedStack = new ItemStack(CommonModHelper.item(selectedPosition.getPosition().getItem()));
-        }
-
-        panel.tick();
+        //panel.tick();
+        innerScreen.tick();
         searchStock.tick();
         String searched = searchStock.getValue();
         if (searchStock.finishedTyping && !searched.equals(lastSearched)) {
             if (!searched.isBlank())
-                //ClientPacketDistributor.sendToServer(new SearchStockPacket(searched));
                 ClientPlayNetworking.send(new SearchStockPacket(searched));
             else
                 updateStockEntryList();
-            //updateStockEntryList();
             lastSearched = searched;
         }
     }
@@ -229,10 +216,6 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         this.graphics = graphics;
 
-        for (var entry : renderTasks.entrySet()) {
-            entry.getValue().run();
-        }
-
         int x = width / 2 - 192;
         int y = height / 2 - 144;
         graphics.blit(TEXTURE, x, y, x + 384, y + 288, 0, 1, 0, 1);
@@ -243,20 +226,22 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
 
         renderStocks(mouseX, mouseY, partialTick);
         renderPositions(mouseX, mouseY, partialTick);
-        panel.render(graphics, mouseX, mouseY, partialTick);
-        renderTasks.remove(RenderTasks.UPDATE_INVENTORY);
+        //panel.render(graphics, mouseX, mouseY, partialTick);
+        innerScreen.render(graphics, mouseX, mouseY, partialTick);
     }
 
     private void renderSlots(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         for (int row = 0; row < inventorySlots.length; row++)
             for (int col = 0; col < inventorySlots[0].length; col++) {
                 ModSlot slot = inventorySlots[row][col];
-                slot.render(graphics, mouseX, mouseY);
+                if (slot != null)
+                    slot.render(graphics, mouseX, mouseY);
             }
 
         for (int col = 0; col < 9; col++) {
             ModSlot slot = hotbarSlots[col];
-            slot.render(graphics, mouseX, mouseY);
+            if (slot != null)
+                slot.render(graphics, mouseX, mouseY);
         }
     }
 
@@ -277,7 +262,7 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
         for (PositionEntry entry : positions)
             entry.refresh();
 
-        panel.refresh();
+        //panel.refresh();
     }
 
     @Override
@@ -289,8 +274,8 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
     public boolean keyPressed(KeyEvent event) {
         if (searchStock != null && searchStock.isFocused())
             return searchStock.keyPressed(event);
-        if (panel != null && panel.isFocused())
-            return panel.keyPressed(event);
+        if (innerScreen != null && innerScreen.isFocused())
+            return innerScreen.keyPressed(event);
 
         return super.keyPressed(event);
     }
@@ -311,16 +296,16 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
             setFocused(searchStock);
             searchStock.setCursorPosition(searchStock.getValue().length());
             searchStock.setHighlightPos(searchStock.getCursorPosition());
-            panel.setFocused(false);
+            innerScreen.setFocused(false);
             return searchStock.mouseClicked(event, doubleClick);
         }
-        if (panel.mouseClicked(event, doubleClick)) {
-            panel.setFocused(true);
+        if (innerScreen.mouseClicked(event, doubleClick)) {
+            innerScreen.setFocused(true);
             searchStock.setFocused(false);
-            return panel.mouseClicked(event, doubleClick);
+            return innerScreen.mouseClicked(event, doubleClick);
         }
         searchStock.setFocused(false);
-        panel.setFocused(false);
+        innerScreen.setFocused(false);
         setFocused(null);
 
         int mouseX = (int) event.x();
@@ -360,6 +345,7 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
         selectedStock = stock;
         selectedEntry = stock;
         selectedPosition = null;
+        innerScreen.refresh();
     }
 
     public StockEntry getSelectedStock() {
@@ -370,6 +356,9 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
         selectedPosition = position;
         selectedEntry = position;
         selectedStock = null;
+        selectedStack = new ItemStack(CommonModHelper.item(position.getPosition().getItem()));
+        innerScreen.refresh();
+        WolfOfMinestreet.LOGGER.info("Setting Selected Position");
     }
 
     public PositionEntry getSelectedPosition() {
@@ -393,6 +382,7 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
     }
 
     public void send() {
+        TradingPanel panel = innerScreen.tradingPanel;
         if (panel.getSelectedButton() == null)
             return;
 
