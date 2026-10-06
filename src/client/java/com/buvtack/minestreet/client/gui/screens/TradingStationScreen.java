@@ -180,11 +180,12 @@ public class TradingStationScreen extends ModScreen<TradingStationMenu> {
         Object tickerList = searched.isBlank() ? Arrays.asList(StockMarket.INITIAL_TICKERS) : StockMarket.storedStocks.keySet();
         List<StockEntry> newStockList = new ArrayList<>();
         for (String ticker : (Iterable<String>) tickerList) {
-            if (ticker.contains(searched)) {
+            JsonObject stock = StockMarketClient.get(ticker);
+            String stockName = StockMarket.name(stock).toUpperCase();
+            if (ticker.contains(searched) || stockName.contains(searched)) {
                 if (i > limit)
                     break;
 
-                JsonObject stock = StockMarketClient.get(ticker);
                 newStockList.add(new StockEntry(x, y, stock));
                 y += gap + StockEntry.HEIGHT;
                 i++;

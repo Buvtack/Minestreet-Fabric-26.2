@@ -176,7 +176,7 @@ public class TradingPanel extends ModComponent {
         }
 
         if (stock != null) {
-            title.setContent(Component.literal(stock.get(StockMarketKeys.NAME).getAsString()));
+            title.setContent(Component.literal(StockMarket.name(stock)));
             stockInfo.setStock(stock);
             reset();
         }
