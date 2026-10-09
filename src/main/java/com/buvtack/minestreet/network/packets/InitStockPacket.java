@@ -14,7 +14,7 @@ public record InitStockPacket(String stocks) implements CustomPacketPayload {
     );
 
     public static final StreamCodec<FriendlyByteBuf, InitStockPacket> CODEC = StreamCodec.composite(
-            ByteBufCodecs.STRING_UTF8, InitStockPacket::stocks,
+            ByteBufCodecs.stringUtf8(500_000), InitStockPacket::stocks,
             InitStockPacket::new
     );
 

@@ -13,7 +13,7 @@ public record GetStockResponsePacket(String stockJson) implements CustomPacketPa
             new Type<>(Identifier.fromNamespaceAndPath(WolfOfMinestreet.MODID, "get_stock_response"));
 
     public static final StreamCodec<FriendlyByteBuf, GetStockResponsePacket> CODEC = StreamCodec.composite(
-            ByteBufCodecs.STRING_UTF8, GetStockResponsePacket::stockJson,
+            ByteBufCodecs.stringUtf8(500_000), GetStockResponsePacket::stockJson,
             GetStockResponsePacket::new
     );
 

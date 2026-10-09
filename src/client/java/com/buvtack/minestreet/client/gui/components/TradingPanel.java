@@ -1,6 +1,7 @@
 package com.buvtack.minestreet.client.gui.components;
 
 import com.buvtack.minestreet.StockMarket;
+import com.buvtack.minestreet.WolfOfMinestreet;
 import com.google.gson.JsonObject;
 import com.buvtack.minestreet.StockMarketKeys;
 import com.buvtack.minestreet.client.ModHelper;
@@ -16,6 +17,7 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
+import net.minecraft.resources.Identifier;
 
 public class TradingPanel extends ModComponent {
 
@@ -132,6 +134,7 @@ public class TradingPanel extends ModComponent {
 
         graphics.fill(x, y, x + WIDTH, y + HEIGHT, ModColors.STOCK_LIST_COLOR.color);
         title.render(graphics, mouseX, mouseY, partialTick);
+        renderLogo();
 
         if (ModHelper.selectedStack())
             selectedItemLabel.render(graphics, mouseX, mouseY, partialTick);
@@ -150,6 +153,16 @@ public class TradingPanel extends ModComponent {
 
         byQuantity.render(graphics, mouseX, mouseY, partialTick);
         byPercentage.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    private void renderLogo() {
+        String ticker = ModHelper.tradingScreen().getSelectedEntry().getTicker().toLowerCase();
+        Identifier id = Identifier.fromNamespaceAndPath(WolfOfMinestreet.MODID, "logo/" + ticker);
+        int width = 16;
+        int height = 16;
+        int margin = 3;
+        int halfTitleWidth = font.width(title.content.getString()) / 2;
+        graphics.blit(id, title.x - width - margin - halfTitleWidth, title.y + font.lineHeight / 2 - height / 2, title.x - margin - halfTitleWidth, title.y + font.lineHeight / 2 + height / 2, 0, 1, 0, 1);
     }
 
     private void renderSelectedStackCount() {
@@ -177,7 +190,7 @@ public class TradingPanel extends ModComponent {
         }
 
         if (stock != null) {
-            title.setContent(Component.literal(StockMarket.name(stock)));
+            title.setContent(Component.literal(StockMarket.displayName(stock)));
             stockInfo.setStock(stock);
             reset();
         }

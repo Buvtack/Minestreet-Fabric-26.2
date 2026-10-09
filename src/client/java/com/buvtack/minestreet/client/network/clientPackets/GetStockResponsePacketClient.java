@@ -2,6 +2,7 @@ package com.buvtack.minestreet.client.network.clientPackets;
 
 import com.buvtack.minestreet.StockMarket;
 import com.buvtack.minestreet.StockMarketKeys;
+import com.buvtack.minestreet.client.Logos;
 import com.buvtack.minestreet.network.packets.GetStockResponsePacket;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -14,6 +15,7 @@ public class GetStockResponsePacketClient {
         Minecraft.getInstance().execute(() -> {
             JsonObject stock = JsonParser.parseString(packet.stockJson()).getAsJsonObject();
             StockMarket.storedStocks.put(stock.get(StockMarketKeys.TICKER).getAsString(), stock);
+            Logos.addLogo(stock);
         });
     }
 }

@@ -1,12 +1,14 @@
 package com.buvtack.minestreet.client.gui.components;
 
 import com.buvtack.minestreet.StockMarketKeys;
+import com.buvtack.minestreet.WolfOfMinestreet;
 import com.buvtack.minestreet.client.gui.ModColors;
 import com.google.gson.JsonObject;
 import com.buvtack.minestreet.StockMarket;
 import com.buvtack.minestreet.client.ModHelper;
 import com.buvtack.minestreet.client.TranslationKeys;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,8 +66,19 @@ public class FundamentalsInfoPanel extends DimensionalModComponent {
         for (ModLabel label : labels)
             label.render(graphics, mouseX, mouseY, partialTick);
 
+        renderLogo();
         pastReturnsTitle.render(graphics, mouseX, mouseY, partialTick);
         pastReturns.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    private void renderLogo() {
+        String ticker = ModHelper.tradingScreen().getSelectedEntry().getTicker().toLowerCase();
+        Identifier id = Identifier.fromNamespaceAndPath(WolfOfMinestreet.MODID, "logo/" + ticker);
+        int width = 16;
+        int height = 16;
+        int margin = 3;
+        int halfTitleWidth = font.width(title.content.getString()) / 2;
+        graphics.blit(id, title.x - width - margin - halfTitleWidth, title.y + font.lineHeight / 2 - height / 2, title.x - margin - halfTitleWidth, title.y + font.lineHeight / 2 + height / 2, 0, 1, 0, 1);
     }
 
     private void reset() {
@@ -87,7 +100,7 @@ public class FundamentalsInfoPanel extends DimensionalModComponent {
         labels.clear();
         if (stock != null) {
             int gap = 2;
-            title = new ModLabel(x + WIDTH / 2, y + 5, Component.literal(StockMarket.name(stock)), ModColors.WHITE, ModLabel.Alignment.CENTER);
+            title = new ModLabel(x + WIDTH / 2, y + 5, Component.literal(StockMarket.displayName(stock)), ModColors.WHITE, ModLabel.Alignment.CENTER);
             labels.add(title);
             assetType = new ModLabel(x + 5, y + 20, Component.translatable(TranslationKeys.ASSET_TYPE).append(Component.literal(StockMarket.type(stock)).withColor(ModColors.GOLD.color)), ModColors.WHITE, ModLabel.Alignment.LEFT);
             labels.add(assetType);

@@ -2,6 +2,7 @@ package com.buvtack.minestreet.client.network.clientPackets;
 
 import com.buvtack.minestreet.StockMarket;
 import com.buvtack.minestreet.StockMarketKeys;
+import com.buvtack.minestreet.client.Logos;
 import com.buvtack.minestreet.client.gui.screens.TradingStationScreen;
 import com.buvtack.minestreet.network.packets.InitStockPacket;
 import com.google.gson.JsonArray;
@@ -22,6 +23,7 @@ public class InitStockPacketClient {
                 String ticker = stock.get(StockMarketKeys.TICKER).getAsString();
                 //shit
                 StockMarket.storedStocks.put(ticker, stock);
+                Logos.addLogo(stock);
             });
 
             Screen screen = Minecraft.getInstance().gui.screen();
