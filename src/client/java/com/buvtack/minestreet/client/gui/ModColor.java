@@ -16,7 +16,7 @@ public class ModColor {
     }
 
     public ModColor transparensify(float ratio) {
-        int newAlpha = (int) (ratio * alpha(color));
+        int newAlpha = (int) ((1 - ratio) * alpha(color));
         return new ModColor(build(newAlpha, red(color), green(color), blue(color)));
     }
 

@@ -97,6 +97,7 @@ public class TradingPanel extends ModComponent {
 
         stockInfo = new ExtendedStockInfo(x + 5, y + 75);
         positionInfo = new ExtendedPositionInfo(x + WIDTH / 2 - 5, y + 75);
+        refresh();
     }
 
     @Override
