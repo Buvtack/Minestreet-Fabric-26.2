@@ -3,7 +3,10 @@
 	"package": "com.buvtack.minestreet.client.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
-		"ScreenAccessor"
+		"ScreenAccessor",
+		"JeiBlockerMixin",
+		"JeiExtraBlocker",
+		"JeiOverlayVanisher"
 	],
 	"injectors": {
 		"defaultRequire": 1
